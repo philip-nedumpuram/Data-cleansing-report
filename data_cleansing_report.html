@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Practice Cloud - Data Cleansing Reports</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cloud-blue: #1976d2;
+      --side-bg: #fff;
+      --bg: #f5f7fa;
+      --border: #e7e8ee;
+      --text-1: #233447;
+      --pill-red: #dc2626;
+      --pill-orange: #fd7e14;
+      --pill-yellow: #facc15;
+      --avatar-bg: #153b7d;
+    }
+    html, body {height:100%;margin:0;padding:0;box-sizing:border-box;}
+    body {background:var(--bg);color:var(--text-1);font-family:'Inter',sans-serif;font-size:15px;}
+    .cloud-topbar {background: var(--cloud-blue); height:60px; display:flex; align-items:center; color:#fff; font-weight:700; font-size:15px;box-shadow:0 2px 6px #0001;z-index:100;}
+    .topbar-content {display:flex;align-items:center;width:100%;}
+    .cloud-logo-img {height:32px;width:32px;object-fit:contain;vertical-align:middle;margin-left:18px;margin-right:9px;}
+    .cloud-logo-text {font-weight:800;font-size:18px;letter-spacing:-0.5px;margin-right:13px;}
+    .patient-chip {background:#fff;color:var(--cloud-blue);padding:5px 15px 5px 12px;border-radius:20px;font-size:15px;font-weight:700;margin-left:10px;}
+    .cloud-support {margin-left:auto;margin-right:20px;font-size:14px;color:#dbeafe;}
+    .cloud-avatar {width:36px;height:36px;background:var(--avatar-bg);color:#fff;font-weight:700;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-right:23px;font-size:15px;}
+    .main-layout {display:flex;min-height:0;height:calc(100vh - 60px);}
+    .cloud-sidebar {width:240px;background:var(--side-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;min-width:0;transition:width .22s;position:relative;}
+    .cloud-sidebar.collapsed{width:60px;min-width:60px;}
+    .sidebar-hamburger-logo {
+      width:100%;display:flex;align-items:center;justify-content:flex-start;padding:11px 0 10px 22px;border-bottom:1px solid var(--border);background:var(--side-bg);height:54px;
+    }
+    .sidebar-hamburger-btn {
+      background:none;border:none;padding:0;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:flex-start;
+    }
+    .sidebar-hamburger-btn svg {
+      height:30px;width:30px;display:block;opacity:.86;transition:.12s;
+    }
+    .sidebar-hamburger-btn:active svg,
+    .sidebar-hamburger-btn:hover svg {opacity:.68;}
+    .sidebar-menu {flex:1;display:flex;flex-direction:column;gap:1px;}
+    .sidebar-link {display:flex;align-items:center;gap:13px;height:44px;cursor:pointer;color:#637792;font-size:15px;font-weight:600;border-left:3px solid transparent;background:none;padding-left:22px;transition:.17s;user-select:none;}
+    .sidebar-link.active{background:#f1f5ff;color:var(--cloud-blue);border-left:3px solid var(--cloud-blue);font-weight:800;}
+    .sidebar-link .icon{font-size:17px;width:19px;text-align:center;}
+    .cloud-sidebar.collapsed .sidebar-link span:not(.icon){display:none;}
+    .filters-wr {display:flex;position:relative;min-width:0;}
+    .filters {
+      width:325px;background:#fff;border-right:1px solid var(--border);min-width:0;
+      display:flex;flex-direction:column;flex-shrink:0;transition:width .22s;
+      overflow-y:auto;max-height:calc(100vh - 60px);
+    }
+    .filters-collapsed {width:0 !important; min-width:0 !important; visibility:hidden; pointer-events:none;}
+    .filters-header {display:flex;align-items:center;justify-content:space-between;padding:18px 20px 10px 20px;border-bottom:1px solid var(--border);font-size:16px;font-weight:800;background:#fff;}
+    .filters-header-title{display:flex;align-items:center;gap:8px;}
+    .filter-chevron-btn{background:none;border:none;cursor:pointer;padding:0 7px;font-size:23px;line-height:1;}
+    .filters-collapsed-bar {
+      position: absolute; left: 0; top:0; bottom:0; width:36px;background: #fff; border-right:1px solid var(--border); z-index:50;
+      display:flex;align-items:center;justify-content:center;flex-direction:column; cursor:pointer;
+    }
+    .filters-collapsed-bar span {
+      writing-mode: vertical-rl;transform:rotate(180deg);font-size:13px;
+      color:var(--cloud-blue);font-weight:700;letter-spacing:-.03em;margin-bottom:10px;user-select:none;
+    }
+    .filter-section {padding:14px 18px 12px 18px;border-bottom:1px solid #e3e8ee;}
+    .filter-section:last-child{border-bottom:none;}
+    .section-title {margin:0 0 14px 0;font-size:15px;font-weight:700;}
+    .custom-radio-group label {
+      display: flex; align-items: center; gap:9px; margin-bottom: 13px; font-size:15px; font-weight:700; color:#22334a; cursor:pointer; user-select:none;
+    }
+    .custom-radio-group input[type="radio"] {
+      appearance: none; width:20px; height:20px; border:2px solid #b1b8cd; background:#fff; border-radius:50%; position:relative; outline:none;
+      display:inline-block;vertical-align:middle; margin:0; transition:.12s;
+    }
+    .custom-radio-group input[type="radio"]:checked {
+      border:6px solid var(--cloud-blue);
+    }
+    .filter-date-group label {display:block;margin:11px 0 4px 0;font-size:13px;font-weight:600;color:#636A82;}
+    .filter-date-group input[type="date"]{width:100%;font-size:14px;padding:8px 10px;margin-bottom:3px;border-radius:6px;border:1px solid #e3e8ee;background:#f6f9fd;}
+    .custom-checkbox-row {margin:14px 0 0;}
+    .custom-checkbox-row label {
+      display: flex; align-items: center; gap:11px; font-size:14px; font-weight:700; color:#263548; cursor:pointer; user-select:none;
+    }
+    .custom-checkbox-row input[type="checkbox"] {
+      appearance: none; width:21px;height:21px;border-radius:7px;
+      border:2.5px solid #b1b8cd;background:#fff;position:relative;transition:.12s;outline:none;margin:0;
+      display:inline-block;vertical-align:middle;
+    }
+    .custom-checkbox-row input[type="checkbox"]:checked {
+      border:7px solid var(--cloud-blue);background:#fff;
+    }
+    .custom-checkbox-row input[type="checkbox"]:checked::after {
+      content: "";
+      display: block;
+      position: absolute;
+      left:5px;top:2px;
+      width:6px;height:13px;
+      border:solid var(--cloud-blue);border-width:0 2.8px 2.8px 0;transform:rotate(42deg) scale(.93);
+    }
+    .filter-input {font-size:14px;padding:8px 12px;border:1px solid #e3e8ee;border-radius:6px;width:100%;margin-bottom:6px;}
+    .saved-list{margin-bottom:7px;}
+    .saved-item {display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+    .saved-item .remove-btn {background:#e2e8f0;color:#dc2626;font-size:14px;border:none;width:22px;height:22px;border-radius:5px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;}
+    .saved-item span{font-size:14px;}
+    .filter-actions-btns {display:flex;gap:10px;}
+    .btn, .btn-primary, .btn-secondary {padding:8px 15px;border-radius:7px;font-size:14px;font-weight:700;border:none;cursor:pointer;}
+    .btn-primary{background:#1976d2;color:#fff;}
+    .btn-secondary{background:#637792;color:#fff;}
+    .provider-list label{display:block;margin-bottom:6px;font-size:14px;}
+    .email-display {background:#f0f3f7;border-radius:7px;padding:10px 13px 10px 11px;font-size:13px;color:#1976d2;margin-bottom:8px;font-weight:600;}
+    .cloud-report-section{flex:1;overflow:auto;padding:24px 32px 0 32px;}
+    .cloud-report-title{font-weight:800;font-size:22px;letter-spacing:-.6px;margin-bottom:13px;}
+    .tabs-area{background:#fff;border-bottom:1px solid #e3e8ee;padding-left:7px;}
+    .tabs-list{display:flex;gap:5px;}
+    .tab-btn{padding:13px 17px;background:none;border:none;outline:none;color:#637792;font-weight:700;font-size:15px;border-bottom:3px solid transparent;cursor:pointer;transition:.14s;}
+    .tab-btn.active{color:#1976d2;border-bottom:3px solid #1976d2;background:#fcfcfd;}
+    .cloud-report-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;}
+    .cloud-report-toolbar .result-count{font-size:14px;color:#637792;}
+    .cloud-report-toolbar .export-dropdown{position:relative;margin-left:auto;}
+    .export-btn{background:#f4f7fa;color:#1976d2;border:1px solid #1976d2;padding:8px 17px;border-radius:7px;font-weight:700;cursor:pointer;}
+    .export-btn:after{content:"▼";font-size:12px;vertical-align:middle;margin-left:6px;}
+    .export-menu{
+      display:none;position:absolute;right:0;top:120%;background:#fff;
+      border:1px solid #e3e8ee;border-radius:7px;min-width:110px;z-index:20;box-shadow:0 2px 5px #0002;
+    }
+    .export-dropdown:hover .export-menu, .export-dropdown:focus-within .export-menu{display:block;}
+    .export-menu button{
+      display:block;width:100%;background:none;border:none;text-align:left;padding:9px 15px;cursor:pointer;font-size:14px;color:#233447;font-weight:600;transition:background .13s;
+    }
+    .export-menu button:hover{background:#f3f8fc;}
+    .cloud-table-wrap{background:#fff;border:1px solid #e3e8ee;border-radius:12px;overflow:auto;}
+    table{width:100%;min-width:1200px;border-spacing:0;}
+    th,td{padding:10px 8px;border-bottom:1px solid #e3e8ee;}
+    th{font-size:14px;font-weight:700;text-align:left;color:#153b7d;background:#f3f6fb;vertical-align:top;user-select:none;white-space:nowrap;}
+    th.confirm-col{width:56px;text-align:center;}
+    th.actions-col{width:68px;text-align:center;}
+    .sort-icon {margin-left:6px;font-size:14px;color:#b0bfd3;vertical-align:middle;}
+    th.two-line{white-space:normal;line-height:1.07;max-width:80px;}
+    tr:hover td{background:#f5f7fa;}
+    .pill-red{background:#dc2626;color:#fff;padding:3px 7px;border-radius:12px;font-weight:700;font-size:13px;}
+    .pill-orange{background:#fd7e14;color:#fff;padding:3px 7px;border-radius:12px;font-weight:700;font-size:13px;}
+    .pill-yellow{background:#facc15;color:#222;padding:3px 7px;border-radius:12px;font-weight:700;font-size:13px;}
+    .actions-buttons{display:flex;gap:5px;justify-content:center;}
+    .actions-buttons button{color:#1976d2;border:1px solid #1976d2;background:#fff;border-radius:6px;padding:3px 10px;font-size:13px;font-weight:700;cursor:pointer;}
+    .actions-buttons button:hover{background:#1976d2;color:#fff;}
+    td.confirm-cell,td.actions-cell{text-align:center;}
+    .cloud-load-more{padding:11px;text-align:center;}
+    .cloud-load-count{color:#637792;font-weight:600;}
+    .cloud-load-btn{background:#1976d2;color:#fff;font-size:15px;border:none;border-radius:7px;font-weight:700;padding:8px 29px;cursor:pointer;}
+    .cloud-load-btn:disabled{background:#e3e8ee;color:#9ca3af;}
+    @media (max-width:1000px){.cloud-sidebar{width:56px;}.filters{display:none;}.cloud-table-wrap,table{min-width:860px;}}
+  </style>
+</head>
+<body>
+  <div class="cloud-topbar">
+    <div class="topbar-content">
+      <img src="practice_cloud_main_icon.svg" class="cloud-logo-img" alt="Practice Cloud" />
+      <span class="cloud-logo-text">Practice Cloud</span>
+      <span class="patient-chip">Total Patients: <b>141,154</b></span>
+      <span style="flex:1"></span>
+      <span class="cloud-support">Support 1800 762 993</span>
+      <span class="cloud-avatar">AD</span>
+    </div>
+  </div>
+  <div class="main-layout">
+    <!-- Sidebar -->
+    <aside class="cloud-sidebar" id="sidebar">
+      <div class="sidebar-hamburger-logo">
+        <button class="sidebar-hamburger-btn" onclick="toggleSidebar()" aria-label="Collapse/Expand sidebar" style="margin-left:0;padding-left:0;">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#1976d2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+            <line x1="7" y1="10" x2="25" y2="10"/>
+            <line x1="7" y1="16" x2="25" y2="16"/>
+            <line x1="7" y1="22" x2="25" y2="22"/>
+          </svg>
+        </button>
+      </div>
+      <nav class="sidebar-menu">
+        <div class="sidebar-link"><span class="icon">🏠</span><span>Home</span></div>
+        <div class="sidebar-link"><span class="icon">🔬</span><span>Clinical Insights</span></div>
+        <div class="sidebar-link"><span class="icon">📈</span><span>Quality Improvement</span></div>
+        <div class="sidebar-link"><span class="icon">💰</span><span>Financial Insights</span></div>
+        <div class="sidebar-link"><span class="icon">⚙️</span><span>Operations</span></div>
+        <div class="sidebar-link active"><span class="icon">🧹</span><span>Data Cleansing</span></div>
+        <div class="sidebar-link"><span class="icon">📥</span><span>Import</span></div>
+        <div class="sidebar-link"><span class="icon">🏢</span><span>Practices</span></div>
+        <div class="sidebar-link"><span class="icon">👥</span><span>User Management</span></div>
+        <div class="sidebar-link"><span class="icon">⚙️</span><span>Settings</span></div>
+        <div class="sidebar-link"><span class="icon">📚</span><span>Resource Centre</span></div>
+      </nav>
+    </aside>
+    <div class="filters-wr" style="position:relative;min-width:36px;">
+      <aside class="filters" id="filters">
+        <div class="filters-header">
+          <span class="filters-header-title"><span>📋</span> Filters &amp; Options</span>
+          <button class="filter-chevron-btn" onclick="toggleFilters()" aria-label="Collapse filters">‹</button>
+        </div>
+        <div class="filter-section">
+          <h4 class="section-title">Saved Filters</h4>
+          <div class="saved-list">
+            <div class="saved-item"><button class="remove-btn" aria-label="Remove">×</button><span>Morning Rounds</span></div>
+            <div class="saved-item"><button class="remove-btn" aria-label="Remove">×</button><span>Dr. Wilson Patients</span></div>
+            <div class="saved-item"><button class="remove-btn" aria-label="Remove">×</button><span>Weekly CKD</span></div>
+          </div>
+          <button class="btn btn-primary w-100">💾 Save Current Filter</button>
+        </div>
+        <div class="filter-section">
+          <h4 class="section-title">Appointments</h4>
+          <div class="custom-radio-group">
+            <label><input type="radio" name="dateRange" checked> Last 12 months</label>
+            <label><input type="radio" name="dateRange"> Last 24 months</label>
+            <label><input type="radio" name="dateRange"> Custom Date Range</label>
+          </div>
+          <div class="filter-date-group">
+            <label for="filter-date-from">From</label>
+            <input id="filter-date-from" type="date" class="filter-input">
+            <label for="filter-date-to">To</label>
+            <input id="filter-date-to" type="date" class="filter-input">
+          </div>
+          <div class="custom-checkbox-row">
+            <label><input type="checkbox" checked>Include patients with no appointments</label>
+          </div>
+        </div>
+        <div class="filter-section">
+          <h4 class="section-title">Practitioners</h4>
+          <input class="filter-input" type="text" placeholder="Search providers...">
+          <div class="provider-list" style="margin-top:7px;max-height:87px;overflow-y:auto;">
+            <label><input type="checkbox" checked> Dr. Sarah Wilson <span style="color:#9ca3af;">(45)</span></label>
+            <label><input type="checkbox" checked> Dr. James Chen <span style="color:#9ca3af;">(38)</span></label>
+            <label><input type="checkbox" checked> Dr. Emily Rodriguez <span style="color:#9ca3af;">(52)</span></label>
+            <label><input type="checkbox" checked> Dr. Michael Thompson <span style="color:#9ca3af;">(31)</span></label>
+            <label><input type="checkbox" checked> Dr. Lisa Anderson <span style="color:#9ca3af;">(29)</span></label>
+            <label><input type="checkbox" checked> No Provider <span style="color:#9ca3af;">(12)</span></label>
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-actions-btns">
+            <button class="btn btn-primary w-100">Apply</button>
+            <button class="btn btn-secondary w-100">Reset</button>
+          </div>
+        </div>
+        <div class="filter-section">
+          <h4 class="section-title">Automation</h4>
+          <div class="email-display">Reports sent to: <br /><b>admin@practice.com</b></div>
+          <div class="filter-actions-btns">
+            <button class="btn w-100">Edit Email</button>
+            <button class="btn btn-primary w-100">Schedule Email</button>
+          </div>
+        </div>
+      </aside>
+      <div class="filters-collapsed-bar" id="filters-collapsed-bar" style="display:none;cursor:pointer;" onclick="toggleFilters(true)" title="Expand Filters">
+        <span>Filters &amp; Options</span>
+        <button class="filter-chevron-btn" style="transform:rotate(180deg);" aria-label="Expand filters">›</button>
+      </div>
+    </div>
+    <section style="display:flex;flex-direction:column;flex:1;overflow:hidden;background:#f7fafc;">
+      <div class="cloud-report-section">
+        <div class="cloud-report-title" id="dcreport-header">Data Cleansing Reports</div>
+        <div class="tabs-area">
+          <div class="tabs-list" id="report-tabs">
+            <button class="tab-btn active" data-key="demographics" onclick="switchTab(this)">Missing Demographics</button>
+            <button class="tab-btn" data-key="clinical" onclick="switchTab(this)">Missing Clinical/Accreditation</button>
+            <button class="tab-btn" data-key="ckd" onclick="switchTab(this)">Indicated CKD</button>
+            <button class="tab-btn" data-key="diabetes" onclick="switchTab(this)">Indicated Diabetes</button>
+            <button class="tab-btn" data-key="mental" onclick="switchTab(this)">Indicated Mental Health</button>
+            <button class="tab-btn" data-key="copd" onclick="switchTab(this)">Indicated COPD</button>
+            <button class="tab-btn" data-key="osteo" onclick="switchTab(this)">Indicated Osteoporosis</button>
+          </div>
+        </div>
+        <div id="dcreport-table"></div>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+const sortIcon = '<span class="sort-icon">&#8597;</span>';
+const pill = (val, c) => `<span class="${c}">${val}</span>`;
+function patientRows(n, cols) {
+  let arr = [];
+  for (let i = 0; i < n; ++i) {
+    let d = [];
+    for (let c = 0; c < cols.length; ++c) {
+      let h = cols[c];
+      if(h=="Surname") d.push(["Brown","Wilson","Adams","Chen","Taylor"][i%5]);
+      else if(h=="First Name") d.push(["Sarah","Mark","Lisa","John","Emily"][Math.floor(i/5)%5]);
+      else if(h=="DOB") d.push(["15/05/1980","28/03/1963","13/10/1977","04/06/1992","11/01/1956"][i%5]);
+      else if(h=="Last Name") d.push(["Smith","Roberts","Lee","Campbell","Morris"][i%5]);
+      else if(h=="Sex") d.push(i%2?"M":"F");
+      else if(h=="Missing Items"||h=="Missing Clinical Items") d.push(i%2 ? "Email, Mobile" : "Emergency, NOK");
+      else if(h.includes("Provider")) d.push(["Dr. Wilson","Dr. Chen","Dr. Taylor","Dr. Anderson","Dr. Thompson","No Provider"][i%6]);
+      else if(h=="Last Contact"||h=="Next Appointment"||h=="Last BP Date"||h=="Last Weight Date"||h=="Indicated Date"||h=="Indication Date") d.push("2025-08-"+(8+(i%15)));
+      else if(h=="Confirm Condition Does Not Exist"||h=="Actions") d.push("");
+      else if(h=="Mental Health Medication") d.push(i%6===0?pill("Sertraline","pill-red"):i%3===0?pill("Amitriptyline","pill-orange"):"Escitalopram");
+      else if(h=="MBS Item") d.push(i%4===0?pill("2715","pill-red"):"None");
+      else if(h=="eGFR") d.push(i%5===0 ? "28" : i%4===0?"42":"55");
+      else if(h=="ACR") d.push(i%5===0 ? "25.8" : i%2===0?"4.2":"8.5");
+      else if(h=="CKD Stage") d.push(i%5===0?pill("Stage 4","pill-red"):i%2===0?pill("Stage 3a","pill-orange"):pill("Stage 3b","pill-yellow"));
+      else if(h=="Antidiabetic Medication") d.push(i%4===0?pill("Metformin,Glipizide","pill-red"):i%2?"Metformin":"Metformin only");
+      else if(h=="HbA1c") d.push(i%5===0?pill("7.3%","pill-red"):i%2===0?pill("6.8%","pill-orange"):"5.9%");
+      else if(h=="FBG") d.push(i%5===0?pill("8.2","pill-red"):"6.1");
+      else if(h=="Tiotropium Medication") d.push(i%4===0?pill("Tiotropium 18mcg","pill-orange"):"None");
+      else if(h=="Spirometry FEV1/FVC"){ let s = i%5===0?"0.68/55%":"0.65/45%"; d.push(i%4===0?pill(s,"pill-red"):pill(s,"pill-orange")); }
+      else if(h=="Fracture (Minimal-trauma)") d.push(i%3===0?pill("Wrist fracture (minimal-trauma)","pill-red"):i%4===0?pill("No fractures","pill-yellow"):"");
+      else if(h=="Osteoporosis Medication") d.push(i%3===0?pill("Alendronate","pill-red"):i%4===0?pill("Denosumab","pill-orange"):"Calcium only");
+      else if(h=="Cancer") d.push(i%3===0? "No":i%2===0?"Breast cancer":"Prostate cancer");
+      else if(h=="Vitamin D") d.push(i%5===0?"25(OH)D 32":"25(OH)D 45");
+      else if(h=="BMD") d.push(i%3===0?"T-score -2.8":"T-score -1.2");
+      else if(h=="BSL") d.push("6.3"); else if(h=="Diabetes/HbA1c") d.push("No/6.2%"); else if(h=="HTN/BP") d.push("Yes/150/95");
+      else if(h=="Obesity") d.push("No/29.9");
+      else if(h=="CVD") d.push(i%2==0?"Yes":"No");
+      else if(h=="Eye Exam"||h=="Foot Exam") d.push((i%2)?"Due":"Current");
+      else if(h=="BMI") d.push("27.1");
+      else if(h=="BP") d.push("132/78");
+      else if(h=="Chol") d.push("4.1");
+      else if(h=="Trig") d.push("1.4");
+      else if(h=="HDL") d.push("1.0");
+      else if(h=="Malb") d.push(i%2?"Normal":"Elevated");
+      else if(h=="Smoking") d.push(i%2?"Ex-smoker":"No");
+      else if(h=="Physical Activity") d.push(i%2?"Low":"Moderate");
+      else if(h=="Waist") d.push("81cm");
+      else if(h=="Lipids") d.push(i%2?"High":"Normal");
+      else if(h=="Depression") d.push(i%2?"Yes":"No"); else if(h=="Anxiety") d.push(i%2?"Yes":"No");
+      else if(h=="Flu Vaccination") d.push(i%2?"2024":"2025"); else if(h=="Pneumococcal Vaccination") d.push(i%2?"2021":"2022");
+      else continue;
+    }
+    arr.push(d);
+  }
+  return arr;
+}
+const demoDatasets = {
+  demographics: {title:"missing demographic information",headers: ['Surname','First Name','DOB','Sex','Missing Items','Assigned Provider','Last Contact','Next Appointment','Confirm Condition Does Not Exist','Actions'],rows: patientRows(25,['Surname','First Name','DOB','Sex','Missing Items','Assigned Provider','Last Contact','Next Appointment','Confirm Condition Does Not Exist','Actions'])},
+  clinical: {title:"missing clinical/accreditation data",headers: ['Surname','First Name','DOB','Sex','Missing Clinical Items','Last BP Date','Last Weight Date','Assigned Provider','Next Appointment','Confirm Condition Does Not Exist','Actions'],rows: patientRows(25,['Surname','First Name','DOB','Sex','Missing Clinical Items','Last BP Date','Last Weight Date','Assigned Provider','Next Appointment','Confirm Condition Does Not Exist','Actions'])},
+  mental: {title:"mental health indicators without diagnosis",headers: ['Surname','First Name','DOB','Sex','Indicated Date','Mental Health Medication','MBS Item','Diabetes','COPD','CHD','Bone Disease','Smoking','BP','BMI','Waist','Lipids','Assigned Provider','Confirm Condition Does Not Exist','Actions'],rows: patientRows(25,['Surname','First Name','DOB','Sex','Indicated Date','Mental Health Medication','MBS Item','Diabetes','COPD','CHD','Bone Disease','Smoking','BP','BMI','Waist','Lipids','Assigned Provider','Confirm Condition Does Not Exist','Actions'])},
+  ckd: {title:"CKD indicators without diagnosis",headers: ['First Name','Last Name','DOB','Sex','Indicated Date','eGFR','ACR','CKD Stage','BSL','FBG','Smoking','Diabetes/HbA1c','HTN/BP','Obesity','CVD','Assigned Provider','Confirm Condition Does Not Exist','Actions'],rows: patientRows(25,['First Name','Last Name','DOB','Sex','Indicated Date','eGFR','ACR','CKD Stage','BSL','FBG','Smoking','Diabetes/HbA1c','HTN/BP','Obesity','CVD','Assigned Provider','Confirm Condition Does Not Exist','Actions'])},
+  diabetes: {title:"diabetes indicators without diagnosis",headers: ['First Name','Last Name','DOB','Sex','Indicated Date','Antidiabetic Medication','HbA1c','FBG','Eye Exam','BMI','BP','Foot Exam','Chol','Trig','HDL','Malb','Smoking','eGFR','Assigned Provider','Confirm Condition Does Not Exist','Actions'],rows: patientRows(25,['First Name','Last Name','DOB','Sex','Indicated Date','Antidiabetic Medication','HbA1c','FBG','Eye Exam','BMI','BP','Foot Exam','Chol','Trig','HDL','Malb','Smoking','eGFR','Assigned Provider','Confirm Condition Does Not Exist','Actions'])},
+  copd: {title:"COPD indicators without diagnosis",headers: ['Surname','First Name','DOB','Sex','Indicated Date','Tiotropium Medication','Spirometry FEV1/FVC','CVD','Osteoporosis','Depression','Anxiety','Smoking','Physical Activity','Flu Vaccination','Pneumococcal Vaccination','Assigned Provider','Confirm Condition Does Not Exist','Actions'],rows: patientRows(25,['Surname','First Name','DOB','Sex','Indicated Date','Tiotropium Medication','Spirometry FEV1/FVC','CVD','Osteoporosis','Depression','Anxiety','Smoking','Physical Activity','Flu Vaccination','Pneumococcal Vaccination','Assigned Provider','Confirm Condition Does Not Exist','Actions'])},
+  osteo: {title:"osteoporosis indicators without diagnosis",headers: ['Surname','First Name','DOB','Indication Date','Fracture (Minimal-trauma)','Osteoporosis Medication','Cancer','Vitamin D','BMD','Assigned Provider','Confirm Condition Does Not Exist','Actions'],rows: patientRows(25,['Surname','First Name','DOB','Indication Date','Fracture (Minimal-trauma)','Osteoporosis Medication','Cancer','Vitamin D','BMD','Assigned Provider','Confirm Condition Does Not Exist','Actions'])}
+};
+let currentReport = "demographics", loadedRows = 0, chunk = 15;
+function renderTable(){
+  const ds = demoDatasets[currentReport];
+  let html = `<div class="cloud-report-toolbar">
+    <span class="result-count">Showing ${Math.min(loadedRows+chunk,ds.rows.length)} of 25 patients with ${ds.title}</span>
+    <span class="export-dropdown">
+      <button class="export-btn" id="exportBtn" aria-haspopup="menu">Export</button>
+      <span class="export-menu" role="menu">
+        <button onclick="alert('Export CSV')">CSV</button>
+        <button onclick="alert('Export Excel')">Excel</button>
+        <button onclick="alert('Export PDF')">PDF</button>
+      </span>
+    </span>
+  </div>`;
+  html += `<div class="cloud-table-wrap"><table><thead><tr>`;
+  ds.headers.forEach(h=>{
+    if(h=="Confirm Condition Does Not Exist") html += `<th class="two-line confirm-col" title="Condition Absent?">Confirm<br>Does Not Exist ${sortIcon}</th>`;
+    else if(h=="Actions") html += `<th class="actions-col">Actions</th>`;
+    else html += `<th${h.length>16?' class="two-line"':''}>${h} ${sortIcon}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+  for(let i=0;i<Math.min(loadedRows+chunk,ds.rows.length);++i){
+    html += `<tr>`;
+    ds.headers.forEach((h,cidx)=>{
+      if(h=="Confirm Condition Does Not Exist")
+        html += `<td class="confirm-cell"><input type="checkbox"></td>`;
+      else if(h=="Actions")
+        html += `<td class="actions-cell actions-buttons"><button>BP</button><button>CIS</button></td>`;
+      else html += `<td>${ds.rows[i][cidx]||""}</td>`;
+    });
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  html += `<div class="cloud-load-more"><div class="cloud-load-count">Showing ${Math.min(loadedRows+chunk,ds.rows.length)} of 25 patients</div>
+    <button class="cloud-load-btn" onclick="loadMore()"${(loadedRows+chunk>=ds.rows.length)?' disabled':''}>${(loadedRows+chunk>=ds.rows.length)?'All Patients Loaded':'Load More'}</button></div>`;
+  document.getElementById("dcreport-table").innerHTML = html;
+  loadedRows = Math.min(loadedRows+chunk,ds.rows.length);
+}
+function switchTab(btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentReport = btn.dataset.key;
+  loadedRows=0;
+  renderTable();
+}
+function loadMore(){ renderTable(); }
+function toggleSidebar(){
+  var sb=document.getElementById('sidebar');
+  sb.classList.toggle('collapsed');
+}
+function toggleFilters(forceOpen){
+  const filters = document.getElementById('filters');
+  const bar = document.getElementById('filters-collapsed-bar');
+  if(forceOpen || filters.classList.contains('filters-collapsed')){
+    filters.classList.remove('filters-collapsed');
+    bar.style.display='none';
+  }else{
+    filters.classList.add('filters-collapsed');
+    bar.style.display='flex';
+  }
+}
+document.addEventListener('DOMContentLoaded', function(){
+  renderTable();
+});
+</script>
+</body>
+</html>
